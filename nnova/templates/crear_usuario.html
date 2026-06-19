@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="contenedor">
+    <div class="acciones" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="titulo" style="margin: 0;">Crear usuario</h2>
+        
+        <!-- CORREGIDO: El name en tu urls.py es 'lista_usuarios' -->   
+         <br><br>
+        <a href="{% url 'lista_usuarios' %}" style="text-decoration: none;">
+            <button type="button" style="background: #64748b;">Volver</button>
+        </a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <input type="text" name="username" placeholder="Usuario" required>
+        <input type="email" name="email" placeholder="Correo" required>
+        <br><br>
+
+        <select name="rol" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 15px;">
+            <option value="admin">Administrador</option>
+            <option value="docente">Docente</option>
+            <option value="estudiante">Estudiante</option>
+        </select>
+
+        <input type="password" name="password" placeholder="Contraseña" required>
+        <br><br>
+
+        <button style="width: 100%;">Crear</button>
+    </form>
+</div>
+
+{% endblock %}
