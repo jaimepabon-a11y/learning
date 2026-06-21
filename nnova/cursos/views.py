@@ -211,6 +211,8 @@ def contacto(request):
 
 # ===================== NUEVA VISTA: SOLICITAR DOCENTE =====================
 
+# ===================== NUEVA VISTA: SOLICITAR DOCENTE =====================
+
 @login_required
 def solicitar_docente(request):
     """Permite a un estudiante enviar una solicitud por email para ser docente.
@@ -223,14 +225,24 @@ def solicitar_docente(request):
             f"El usuario {request.user.username} ({request.user.email}) ha solicitado ser docente.\n"
             f"Visita el panel de administración para aprobarlo: {request.build_absolute_uri('/') }admin/"
         )
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[settings.EMAIL_HOST_USER],
-        )
-        messages.success(request, "Solicitud enviada al administrador.")
+        
+        try:
+            # Mandamos el correo protegiendo el flujo con fail_silently=True
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[settings.EMAIL_HOST_USER],
+                fail_silently=True  # Evita que Django se quede congelado si el servidor SMTP no responde
+            )
+            messages.success(request, "Solicitud enviada al administrador.")
+        except Exception as e:
+            # Si ocurre un error inesperado, lo registramos en los logs de Railway sin tumbar la web
+            print(f"Error al enviar solicitud de docente: {e}")
+            messages.warning(request, "La solicitud se procesó, pero hubo un problema al enviar la notificación.")
+
         return redirect('inicio')
+        
     return render(request, 'solicitar_docente.html')
 
 # ===================== DOCENTE =====================
