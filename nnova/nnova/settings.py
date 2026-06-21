@@ -19,6 +19,12 @@ DEBUG = False
 ALLOWED_HOSTS = ["*"]
 
 
+# ✅ CONFIAR EN EL DOMINIO DE PRODUCCIÓN PARA EVITAR ERROR CSRF (403)
+CSRF_TRUSTED_ORIGINS = [
+    'https://learning-production-7213.up.railway.app',
+]
+
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
