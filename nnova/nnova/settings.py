@@ -1,128 +1,30 @@
-"""
-Django settings for nnova project.
-"""
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 
-from pathlib import Path
-import mimetypes
+@login_required
+def contacto(request):
+    if request.method == 'POST':
+        mensaje = request.POST.get('mensaje')
 
-mimetypes.add_type("text/css", ".css", True)
+        try:
+            # Envia el correo usando tus credenciales de Gmail fijadas en settings
+            send_mail(
+                subject=f"Nnova Learning - Nuevo mensaje de {request.user.username}",
+                message=f"El usuario {request.user.username} ({request.user.email}) ha enviado el siguiente mensaje desde la plataforma:\n\n{mensaje}",
+                from_email=settings.EMAIL_HOST_USER,      # valentina10solano@gmail.com
+                recipient_list=[settings.EMAIL_HOST_USER], # Te llegará a ti misma para que lo leas
+                fail_silently=False                        # Ponlo en False para capturar si Gmail rechaza la conexión
+            )
+            messages.success(request, "¡Tu mensaje ha sido enviado con éxito y llegará al correo!")
+            
+        except Exception as e:
+            # Si Google bloquea la IP de Railway o rechaza la clave, no tumba la página, te avisa el error exacto
+            print(f"❌ ERROR SMTP DE GMAIL: {e}")
+            messages.error(request, f"El mensaje no pudo salir por un problema de autenticación con Gmail.")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+        return redirect('contacto')
 
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n7(@c@$+&ue8t&6@7jirq5ie)a)ep@d0ema=vjzjfzmc@1+6+v'
-
-# ⚠️ PRODUCCIÓN (Railway)
-DEBUG = False
-
-ALLOWED_HOSTS = ["*"]
-
-
-# ✅ CONFIAR EN EL DOMINIO DE PRODUCCIÓN PARA EVITAR ERROR CSRF (403)
-CSRF_TRUSTED_ORIGINS = [
-    'https://learning-production-7213.up.railway.app',
-]
-
-
-# Application definition
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'usuarios',
-    'cursos',
-]
-
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ EVITA ERRORES DE CSS EN PRODUCCIÓN
-    'django.middleware.locale.LocaleMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-
-ROOT_URLCONF = 'nnova.urls'
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-
-WSGI_APPLICATION = 'nnova.wsgi.application'
-
-
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-
-# Password validation
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
-    {'NAME': 'usuarios.validators.ComplejidadPasswordValidator'},
-]
-
-
-# Internationalization
-LANGUAGE_CODE = 'es'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
-
-
-# Static files
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
-
-# ✅ NECESARIO PARA RAILWAY
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# ✅ CONFIGURACIÓN ADICIONAL PARA WHITENOISE
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-
-# Custom user
-AUTH_USER_MODEL = 'usuarios.Usuario'
-
-LOGIN_REDIRECT_URL = '/app/'
-LOGIN_URL = '/login/'
-
-
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-
-# Email (NO LO TOCO para evitar errores)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-
-EMAIL_HOST_USER = 'valentina10solano@gmail.com'
-EMAIL_HOST_PASSWORD = 'dzlomnwbjullvmpw'
+    return render(request, 'contacto.html')
