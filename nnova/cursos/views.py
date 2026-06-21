@@ -191,24 +191,21 @@ def contacto(request):
         mensaje = request.POST.get('mensaje')
 
         try:
-            # Obtenemos el correo de configuración de forma segura
-            correo_servidor = getattr(settings, 'EMAIL_HOST_USER', 'no-reply@nnova.com')
+            # 1. En lugar de send_mail (que congela la página), registramos el mensaje en Railway
+            print("\n--- 📩 NUEVO MENSAJE DE CONTACTO ---")
+            print(f"Usuario: {request.user.username} ({request.user.email})")
+            print(f"Mensaje: {mensaje}")
+            print("------------------------------------\n")
             
-            # Mandamos el correo protegiendo el flujo
-            send_mail(
-                subject=f"Mensaje de {request.user.username}",
-                message=mensaje,
-                from_email=correo_servidor,
-                recipient_list=[correo_servidor],  # te llega a ti
-                fail_silently=True  # Evita congelamientos si el SMTP no responde
-            )
+            # 2. Mostramos el mensaje de éxito en la pantalla del usuario
             messages.success(request, "¡Tu mensaje ha sido enviado con éxito!")
+            
         except Exception as e:
-            # Si falta una variable o falla algo, Railway lo registra pero la web sigue viva
-            print(f"Error crítico en el envío de contacto: {e}")
-            messages.error(request, "El mensaje se procesó localmente, pero no se pudo enviar la notificación por correo.")
+            print(f"Error inesperado en contacto: {e}")
+            messages.error(request, "Hubo un problema al procesar tu mensaje.")
 
-        return redirect('contacto')
+        # 3. Redirección segura usando la ruta exacta con barras diagonales
+        return redirect('/contacto/')
 
     return render(request, 'contacto.html')
 
