@@ -173,23 +173,25 @@ def detalle_curso(request, id):
     })
 
 
-def logout_usuario(request):
-    logout(request)
-    return redirect('/')
-
 @login_required
 def contacto(request):
     if request.method == 'POST':
         mensaje = request.POST.get('mensaje')
 
-        send_mail(
-            subject=f"Mensaje de {request.user.username}",
-            message=mensaje,
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[settings.EMAIL_HOST_USER],  # te llega a ti
-        )
-
-        messages.success(request, "Mensaje enviado correctamente")
+        try:
+            # Mandamos el correo protegiendo el flujo con fail_silently=True
+            send_mail(
+                subject=f"Mensaje de {request.user.username}",
+                message=mensaje,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[settings.EMAIL_HOST_USER],  # te llega a ti
+                fail_silently=True  #  Evita que Django se quede congelado si el servidor SMTP no responde
+            )
+            messages.success(request, "Mensaje enviado correctamente")
+        except Exception as e:
+            # Si ocurre un error inesperado, lo registramos en los logs de Railway sin tumbar la web
+            print(f"Error en el envío de correo: {e}")
+            messages.error(request, "El mensaje no pudo enviarse por un problema de conexión. Inténtalo más tarde.")
 
         return redirect('contacto')
 
