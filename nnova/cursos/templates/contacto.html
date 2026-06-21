@@ -5,7 +5,8 @@
 
     <h2>Contacto</h2>
 
-    <form method="post">
+    <!-- Le agregamos el action explícito aquí -->
+    <form method="post" action="{% url 'contacto' %}">
         {% csrf_token %}
 
         <textarea name="mensaje" placeholder="Escribe tu mensaje..." 
