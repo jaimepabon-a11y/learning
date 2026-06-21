@@ -23,23 +23,33 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 
+# ===================== SISTEMA / AUTENTICACIÓN =====================
+
+def logout_usuario(request):
+    """Cierra la sesión del usuario y limpia el estado del cliente."""
+    logout(request)
+    return redirect('/')
+
+
 # ===================== ESTUDIANTE =====================
 
 @login_required
 @never_cache
 def inicio(request):
-    # Redirigir docentes y admins a sus paneles propios
-    if request.user.is_authenticated and request.user.rol == 'docente':
+    # 1. REDIRECCIÓN INMEDIATA SEGÚN EL ROL (Evita procesar código innecesario)
+    if request.user.rol == 'docente':
         return redirect('panel_docente')
-    if request.user.is_authenticated and request.user.rol == 'admin':
+    if request.user.rol == 'admin':
         return redirect('panel_admin')
 
+    # Si llegó aquí, garantizamos que es un 'estudiante'
     cursos = Curso.objects.all()
     busqueda = request.GET.get('q')
 
     if busqueda:
         cursos = cursos.filter(nombre__icontains=busqueda)
 
+    # Obtener los IDs de los cursos en los que ya está inscrito
     inscritos = Inscripcion.objects.filter(
         estudiante=request.user
     ).values_list('curso_id', flat=True)
@@ -49,38 +59,40 @@ def inicio(request):
         'inscritos': inscritos
     }
 
-    if request.user.rol == 'estudiante':
-        inscripciones = Inscripcion.objects.filter(estudiante=request.user).select_related('curso')
-        entregas = Entrega.objects.filter(estudiante=request.user).select_related('actividad__curso')
-        
-        # Calcular promedios
-        notas_cursos = [i.nota for i in inscripciones if i.nota is not None]
-        promedio_cursos = round(sum(notas_cursos) / len(notas_cursos), 2) if notas_cursos else None
-        
-        # Actividades pendientes de realizar
-        cursos_inscritos_ids = inscripciones.values_list('curso_id', flat=True)
-        actividades_pendientes = Actividad.objects.filter(
-            curso_id__in=cursos_inscritos_ids
-        ).exclude(
-            id__in=entregas.values_list('actividad_id', flat=True)
-        ).select_related('curso')
-        
-        notas_entregas = [e.nota for e in entregas if e.nota is not None]
-        promedio_entregas = round(sum(notas_entregas) / len(notas_entregas), 2) if notas_entregas else None
-        
-        entregas_calificadas = entregas.filter(estado='calificado').count()
-        entregas_pendientes = entregas.filter(estado='pendiente').count()
-        
-        context.update({
-            'inscripciones_rendimiento': inscripciones,
-            'entregas_rendimiento': entregas,
-            'actividades_pendientes': actividades_pendientes,
-            'promedio_cursos': promedio_cursos,
-            'promedio_entregas': promedio_entregas,
-            'entregas_calificadas': entregas_calificadas,
-            'entregas_pendientes': entregas_pendientes,
-            'total_cursos_inscritos': inscripciones.count(),
-        })
+    # 2. PROCESAMIENTO EXCLUSIVO DE RENDIMIENTO PARA ESTUDIANTES
+    inscripciones = Inscripcion.objects.filter(estudiante=request.user).select_related('curso')
+    entregas = Entrega.objects.filter(estudiante=request.user).select_related('actividad__curso')
+    
+    # Calcular promedios de cursos
+    notas_cursos = [i.nota for i in inscripciones if i.nota is not None]
+    promedio_cursos = round(sum(notas_cursos) / len(notas_cursos), 2) if notas_cursos else None
+    
+    # Actividades pendientes de realizar
+    cursos_inscritos_ids = list(inscritos) # Reutilizamos los IDs que ya consultamos arriba
+    actividades_pendientes = Actividad.objects.filter(
+        curso_id__in=cursos_inscritos_ids
+    ).exclude(
+        id__in=entregas.values_list('actividad_id', flat=True)
+    ).select_related('curso')
+    
+    # Calcular promedios de entregas
+    notas_entregas = [e.nota for e in entregas if e.nota is not None]
+    promedio_entregas = round(sum(notas_entregas) / len(notas_entregas), 2) if notas_entregas else None
+    
+    entregas_calificadas = entregas.filter(estado='calificado').count()
+    entregas_pendientes = entregas.filter(estado='pendiente').count()
+    
+    # Actualizamos el contexto con toda la información académica
+    context.update({
+        'inscripciones_rendimiento': inscripciones,
+        'entregas_rendimiento': entregas,
+        'actividades_pendientes': actividades_pendientes,
+        'promedio_cursos': promedio_cursos,
+        'promedio_entregas': promedio_entregas,
+        'entregas_calificadas': entregas_calificadas,
+        'entregas_pendientes': entregas_pendientes,
+        'total_cursos_inscritos': inscripciones.count(),
+    })
 
     return render(request, 'inicio.html', context)
 
