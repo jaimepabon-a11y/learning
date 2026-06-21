@@ -191,19 +191,22 @@ def contacto(request):
         mensaje = request.POST.get('mensaje')
 
         try:
-            # Mandamos el correo protegiendo el flujo con fail_silently=True
+            # Obtenemos el correo de configuración de forma segura
+            correo_servidor = getattr(settings, 'EMAIL_HOST_USER', 'no-reply@nnova.com')
+            
+            # Mandamos el correo protegiendo el flujo
             send_mail(
                 subject=f"Mensaje de {request.user.username}",
                 message=mensaje,
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[settings.EMAIL_HOST_USER],  # te llega a ti
-                fail_silently=True  #  Evita que Django se quede congelado si el servidor SMTP no responde
+                from_email=correo_servidor,
+                recipient_list=[correo_servidor],  # te llega a ti
+                fail_silently=True  # Evita congelamientos si el SMTP no responde
             )
-            messages.success(request, "Mensaje enviado correctamente")
+            messages.success(request, "¡Tu mensaje ha sido enviado con éxito!")
         except Exception as e:
-            # Si ocurre un error inesperado, lo registramos en los logs de Railway sin tumbar la web
-            print(f"Error en el envío de correo: {e}")
-            messages.error(request, "El mensaje no pudo enviarse por un problema de conexión. Inténtalo más tarde.")
+            # Si falta una variable o falla algo, Railway lo registra pero la web sigue viva
+            print(f"Error crítico en el envío de contacto: {e}")
+            messages.error(request, "El mensaje se procesó localmente, pero no se pudo enviar la notificación por correo.")
 
         return redirect('contacto')
 
