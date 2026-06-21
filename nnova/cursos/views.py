@@ -191,7 +191,7 @@ def contacto(request):
         mensaje = request.POST.get('mensaje')
 
         try:
-            # 1. En lugar de send_mail (que congela la página), registramos el mensaje en Railway
+            # 1. Registramos el mensaje de forma segura en la consola de Railway
             print("\n--- 📩 NUEVO MENSAJE DE CONTACTO ---")
             print(f"Usuario: {request.user.username} ({request.user.email})")
             print(f"Mensaje: {mensaje}")
@@ -204,11 +204,10 @@ def contacto(request):
             print(f"Error inesperado en contacto: {e}")
             messages.error(request, "Hubo un problema al procesar tu mensaje.")
 
-        # 3. Redirección segura usando la ruta exacta con barras diagonales
-        return redirect('/contacto/')
+        # 3. CORRECCIÓN: Redirección usando el nombre oficial registrado en urls.py
+        return redirect('contacto')
 
     return render(request, 'contacto.html')
-
 # ===================== NUEVA VISTA: SOLICITAR DOCENTE =====================
 
 # ===================== NUEVA VISTA: SOLICITAR DOCENTE =====================
