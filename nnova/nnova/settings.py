@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ EVITA ERRORES DE CSS EN PRODUCCIÓN
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -94,6 +95,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # ✅ NECESARIO PARA RAILWAY
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# ✅ CONFIGURACIÓN ADICIONAL PARA WHITENOISE
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Custom user
